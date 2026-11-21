@@ -17,6 +17,7 @@ import { useTeamHubRuntime } from "@/features/teamhub/teamhub-runtime";
 import { commonMessages } from "@/i18n/common.messages";
 import { translate } from "@/i18n/language";
 import { useT } from "@/i18n/use-translation";
+import { formatBytes } from "@/lib/format-bytes";
 import type {
   TeamHubDocument,
   TeamHubDocumentVersion,
@@ -441,12 +442,3 @@ function PreviewFallback({
   );
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}

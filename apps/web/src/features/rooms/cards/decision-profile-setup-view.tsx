@@ -34,6 +34,7 @@ import {
 import { useTeamHubRuntime } from "@/features/teamhub/teamhub-runtime";
 import { translate, type Translate } from "@/i18n/language";
 import { useT } from "@/i18n/use-translation";
+import { formatBytes } from "@/lib/format-bytes";
 import type {
   TeamHubExternalApp,
   TeamHubExternalConnection,
@@ -556,7 +557,7 @@ function ProfileSetupSources(props: Props) {
                         <span className="text-xs text-app-muted tabular-nums">
                           {item.upload
                             ? t(cardsMessages.uploadedSize, {
-                                size: formatFileSize(item.file.size),
+                                size: formatBytes(item.file.size),
                               })
                             : `${Math.round(item.progress * 100)}%`}
                         </span>
@@ -741,12 +742,6 @@ function linkLabel(value: string) {
   return url.pathname === "/" && !url.search
     ? url.hostname
     : `${url.hostname}${url.pathname}${url.search}`;
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function cancelAttachmentUpload(
