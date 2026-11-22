@@ -24,6 +24,10 @@ const folders = new Map([
   ["sessions", "timeline/meetings"],
 ]);
 
+// Windows resolves these names to devices whatever the extension, so a page
+// titled `CON`, `nul.txt` or `com1` cannot name a file there.
+const RESERVED_DEVICE_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/iu;
+
 function readableName(value: string): string {
   const clean = value
     .normalize("NFC")
@@ -32,7 +36,10 @@ function readableName(value: string): string {
     .replace(/\s+/gu, " ")
     .replace(/^[. ]+|[. ]+$/gu, "");
   // Keep room for the date, extension and a disambiguating ID even for CJK titles.
-  return [...clean].slice(0, 48).join("") || "Untitled";
+  const name = [...clean].slice(0, 48).join("") || "Untitled";
+  return RESERVED_DEVICE_NAME.test(name.split(".")[0] ?? name)
+    ? `_${name}`
+    : name;
 }
 
 /** Published page IDs stay stable. Only filenames in the reader's tree use titles. */
