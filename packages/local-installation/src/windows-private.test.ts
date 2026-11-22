@@ -35,6 +35,60 @@ it("fails closed without disclosing command diagnostics", async () => {
     reason: "UNCHECKED",
   });
 });
+it("keeps the launch contract the failure path must not alter", async () => {
+  const run = vi.fn().mockResolvedValue({ code: 0, stdout: "", stderr: "" });
+  await windowsPrivatePath(
+    "C:\\Users\\person\\private folder",
+    "directory",
+    true,
+    run,
+  );
+  const [file, args, options] = run.mock.calls[0]! as [
+    string,
+    string[],
+    { input: string; timeoutMs: number },
+  ];
+  expect(path.win32.basename(file)).toBe("powershell.exe");
+  expect(args.slice(0, 4)).toEqual([
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+    "-EncodedCommand",
+  ]);
+  expect(Buffer.from(args.at(-1)!, "base64").toString("utf16le")).toBe(
+    WINDOWS_PRIVATE_SCRIPT,
+  );
+  // The path never reaches the command line, and the bound stays 30 seconds.
+  expect(args.join(" ")).not.toContain("person");
+  expect(options.timeoutMs).toBe(30000);
+  expect(JSON.parse(options.input)).toMatchObject({
+    kind: "directory",
+    repair: true,
+  });
+});
+
+it("reports the path when the ACL program could not run at all", async () => {
+  const run = vi.fn().mockRejectedValue(
+    Object.assign(new Error("Command timed out"), {
+      code: "COMMAND_TIMEOUT",
+    }),
+  );
+  const error = await windowsPrivatePath(
+    "C:\\Users\\person\\private",
+    "directory",
+    false,
+    run,
+  ).catch((failure: unknown) => failure as Error & { cause?: unknown });
+  expect(error?.message).toMatch(/^Windows private path validation failed: /);
+  expect(error?.message).toContain("could not be checked");
+  expect(error?.message).not.toContain("Command timed out");
+  expect(error).toMatchObject({
+    code: WINDOWS_PRIVATE_PATH_UNSAFE,
+    reason: "UNCHECKED",
+  });
+  expect(error?.cause).toMatchObject({ code: "COMMAND_TIMEOUT" });
+});
+
 it("names the path and why it is not private", async () => {
   const file =
     "C:\\Users\\person\\.simplexai\\instances\\desktop\\native.env.1.tmp";
