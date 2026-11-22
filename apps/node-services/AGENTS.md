@@ -122,6 +122,14 @@ is unchanged. Invalid JSON remains `DOCUMENT_SOURCE_INVALID`.
   focused work; `NODE_SERVICES_ROLES=agent` (or another role) narrows it.
 - Memory CLIs: `pnpm --filter @linger/node-services memory:<command>`.
 
+## Published memory files
+
+A published page's file name comes from its title, so it has to survive every
+filesystem the reader runs on: characters a filesystem rejects become spaces,
+leading and trailing dots and spaces are trimmed, the name is bounded, and a
+name Windows resolves to a device regardless of its extension (`CON`,
+`nul.txt`, `com1`) is prefixed with `_` rather than failing the publication.
+
 ## Large text documents
 
 CSV and TSV normalization accepts large row counts within the existing source
