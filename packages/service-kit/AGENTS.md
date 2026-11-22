@@ -18,7 +18,10 @@ installation core.
 - `src/byok-endpoint.ts`: isomorphic BYOK address entry (`byokProtocolFor`,
   `defaultByokEndpoint`, `normalizeByokPath`, `normalizeByokBaseUrl`,
   `validByokPath`, `isByokProtocol`, and the BYOK path pattern and runtime
-  default constants), exported as `@linger/service-kit/byok-endpoint`.
+  default constants), exported as `@linger/service-kit/byok-endpoint`. A path
+  may only append whole segments, so `validByokPath` refuses a dot segment,
+  literal or percent-encoded; a path alone never names a host, query or
+  fragment.
 - `src/messages.ts`: isomorphic message formatting (`defineMessages`,
   `formatMessage`, `resolveMessage`; plurals through `Intl.PluralRules`,
   `{name}` placeholders and `<tag>` spans), exported as
