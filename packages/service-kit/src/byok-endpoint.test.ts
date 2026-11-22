@@ -67,6 +67,23 @@ describe("BYOK endpoint helpers", () => {
     }
   });
 
+  it("rejects a path that shortens the base URL instead of extending it", () => {
+    for (const bad of [
+      "/..",
+      "/../admin",
+      "/a/../b",
+      "/a/./b",
+      "/%2e%2e/x",
+      "/.%2e/x",
+      "/%2E./x",
+    ]) {
+      expect(BYOK_URL_PATH_PATTERN.test(bad)).toBe(true);
+      expect(validByokPath(bad)).toBe(false);
+    }
+    for (const good of ["/v1", "/a.b/c", "/a..b", "/.well-known"])
+      expect(validByokPath(good)).toBe(true);
+  });
+
   it("derives the wire format from the URL ending and falls back to the Runtime", () => {
     expect(
       byokProtocolFor("https://api.example.com/v1/chat/completions", "claude"),
