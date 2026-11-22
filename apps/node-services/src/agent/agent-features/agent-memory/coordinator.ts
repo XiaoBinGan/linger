@@ -89,11 +89,28 @@ function bytes(value: string): number {
  */
 type PassMode = "resume" | "extract" | "consolidate";
 
+/** Counts characters, not UTF-16 code units: one astral character is one. */
+function characterCount(text: string): number {
+  let count = 0;
+  for (const _ of text) count += 1;
+  return count;
+}
+
+/** A long source string keeps its head, cut between characters, and the
+ * omitted count is characters so the note agrees with its own wording. */
+export function clipSourceText(value: string): string {
+  if (value.length <= MAX_SOURCE_TEXT) return value;
+  let end = MAX_SOURCE_TEXT;
+  const last = value.charCodeAt(end - 1);
+  // Never keep half of a surrogate pair.
+  if (last >= 0xd800 && last <= 0xdbff) end -= 1;
+  const kept = value.slice(0, end);
+  const omitted = characterCount(value) - characterCount(kept);
+  return `${kept}… [${omitted} characters omitted]`;
+}
+
 function clip(value: RuntimeHistoryJsonValue): RuntimeHistoryJsonValue {
-  if (typeof value === "string")
-    return value.length > MAX_SOURCE_TEXT
-      ? `${value.slice(0, MAX_SOURCE_TEXT)}… [${value.length - MAX_SOURCE_TEXT} characters omitted]`
-      : value;
+  if (typeof value === "string") return clipSourceText(value);
   if (Array.isArray(value)) return value.map(clip);
   if (value && typeof value === "object")
     return Object.fromEntries(
