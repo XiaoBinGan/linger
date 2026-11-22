@@ -20,6 +20,10 @@ export const MAX_BYOK_URL_PATH = 256;
 // only extend the base URL's path.
 export const BYOK_URL_PATH_PATTERN = /^(?:\/[^/?#\s\\]+)*$/u;
 
+// A dot segment shortens the resolved path instead of extending it, in its
+// literal form and in the percent-encoded forms a URL parser treats as dots.
+const BYOK_DOT_SEGMENT = /^(?:\.|%2e){1,2}$/iu;
+
 /** The endpoint suffix that names each BYOK wire format. */
 export const BYOK_PROTOCOL_ENDPOINTS: Readonly<Record<ByokProtocol, string>> = {
   "openai-chat": "/chat/completions",
@@ -67,7 +71,11 @@ export function normalizeByokBaseUrl(value: string): string {
 
 /** Whether a path only appends whole segments to the base URL. */
 export function validByokPath(path: string): boolean {
-  return path.length <= MAX_BYOK_URL_PATH && BYOK_URL_PATH_PATTERN.test(path);
+  return (
+    path.length <= MAX_BYOK_URL_PATH &&
+    BYOK_URL_PATH_PATTERN.test(path) &&
+    !path.split("/").some((segment) => BYOK_DOT_SEGMENT.test(segment))
+  );
 }
 
 /**
