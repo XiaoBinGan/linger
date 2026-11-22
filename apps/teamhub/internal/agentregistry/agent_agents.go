@@ -84,15 +84,23 @@ func NormalizedAgentText(value *string) *string {
 	return &normalized
 }
 
+// The Agent text bounds, in characters: a CJK name of 120 characters is 360
+// bytes and still fits.
+const (
+	MaxNameRunes         = 120
+	MaxDescriptionRunes  = 1000
+	MaxInstructionsRunes = 50000
+)
+
 // ValidAgentProfileChange enforces the contract limits on provided fields.
 func ValidAgentProfileChange(change AgentProfileChange) bool {
-	if change.Name != nil && (*change.Name == "" || utf8.RuneCountInString(*change.Name) > 120 || !utf8.ValidString(*change.Name)) {
+	if change.Name != nil && (*change.Name == "" || utf8.RuneCountInString(*change.Name) > MaxNameRunes || !utf8.ValidString(*change.Name)) {
 		return false
 	}
-	if change.Description != nil && (utf8.RuneCountInString(*change.Description) > 1000 || !utf8.ValidString(*change.Description)) {
+	if change.Description != nil && (utf8.RuneCountInString(*change.Description) > MaxDescriptionRunes || !utf8.ValidString(*change.Description)) {
 		return false
 	}
-	if change.Instructions != nil && (*change.Instructions == "" || utf8.RuneCountInString(*change.Instructions) > 50000 ||
+	if change.Instructions != nil && (*change.Instructions == "" || utf8.RuneCountInString(*change.Instructions) > MaxInstructionsRunes ||
 		!utf8.ValidString(*change.Instructions) || collaboration.IsUninitializedAgentProfile(*change.Instructions)) {
 		return false
 	}
