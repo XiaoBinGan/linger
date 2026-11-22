@@ -304,7 +304,7 @@ func validateSemanticOperation(value json.RawMessage) error {
 		}
 		if err := decodeStrictSemanticOperation(value, &operation); err != nil ||
 			operation.Kind != "replace_comment_text" || !validSemanticReferenceID(operation.ThreadID) ||
-			len(operation.Replacement) < 1 || len(operation.Replacement) > 50000 {
+			!ValidCommentReplacement(operation.Replacement) {
 			return ErrInvalidInput
 		}
 	default:

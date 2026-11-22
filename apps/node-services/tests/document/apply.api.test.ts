@@ -127,6 +127,49 @@ describe("Document Runtime apply contract", () => {
     expect(bodies.rows.get(documentId)!.threadIds).toEqual(["thread_apply_01"]);
   });
 
+  it("counts a comment replacement in characters, not UTF-16 units", async () => {
+    const { post } = await applyFixture("Body");
+    // 25 001 emoji are 50 002 UTF-16 units and 25 001 characters, so a count of
+    // value.length would refuse a replacement the contract allows.
+    const emoji = "\u{1F600}".repeat(25_001);
+    expect(
+      (
+        await post(
+          semantic([
+            {
+              kind: "replace_comment_text",
+              thread_id: "thread_1",
+              replacement: emoji,
+            },
+          ]),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await post(
+          semantic([
+            {
+              kind: "replace_comment_text",
+              thread_id: "thread_1",
+              replacement: "\u{1F600}".repeat(50_001),
+            },
+          ]),
+        )
+      ).status,
+    ).toBe(422);
+  });
+
+  it("counts the current title in characters, not UTF-16 units", async () => {
+    const { post } = await applyFixture("Body");
+    // 255 astral characters are 510 UTF-16 units; the contract bounds
+    // characters, so the Runtime must accept the title TeamHub now allows.
+    const title = "\u{1F600}".repeat(255);
+    const body = semantic([{ kind: "set_title", title }]);
+    const response = await post(body);
+    expect(response.status).toBe(200);
+  });
+
   it("fails closed for bad authority, input and Documents", async () => {
     const { bodies, post } = await applyFixture("Body");
     const valid = semantic([{ kind: "set_title", title: "After" }]);
