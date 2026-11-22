@@ -57,6 +57,33 @@ describe("Wiki knowledge graph", () => {
     );
     expect(graph.nodes.map((node) => node.id)).not.toContain("phantom");
   });
+  it("reads the YAML aliases a published page writes", () => {
+    const { graph, aliases } = buildWikiGraph(
+      [
+        {
+          key: "projects/atlas.md",
+          content:
+            "---\ntitle: Atlas Rollout\ntype: Project\naliases:\n  - Atlas Program\n---\n# Atlas Rollout\n\nDelivery notes.",
+        },
+        {
+          key: "sessions/2026-09-01/a.md",
+          content:
+            "---\ntitle: Session\ntype: Session\n---\n# Session\n\nThe Atlas Program review finished.",
+        },
+      ],
+      "wiki-r1",
+    );
+    expect([...aliases]).toEqual([["projects/atlas", ["Atlas Program"]]]);
+    expect(
+      graph.inferredEdges?.some(
+        (edge) =>
+          edge.kind === "mention" &&
+          edge.source === "sessions/2026-09-01/a" &&
+          edge.target === "projects/atlas",
+      ),
+    ).toBe(true);
+  });
+
   it("reads aliases from the frontmatter of pages others can name", () => {
     const { aliases } = buildWikiGraph(
       [
