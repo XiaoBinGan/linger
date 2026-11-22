@@ -8,5 +8,11 @@ export function formatBytes(bytes: number) {
     value /= 1024;
     unit += 1;
   }
+  // One decimal place can carry a size that sits just under the next unit up
+  // to 1024, so promote it before it is printed.
+  if (Number(value.toFixed(1)) >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
   return `${Number(value.toFixed(1))} ${units[unit]}`;
 }
