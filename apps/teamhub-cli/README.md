@@ -12,7 +12,7 @@ teamhub docs update --schema
 
 ## Common operations
 
-Pass a body directly with `--content`, or read UTF-8 with `--file <path>`; `--file -` reads stdin, such as a quoted heredoc (`<<'EOF'`), which keeps `$` and backticks as typed. `docs update --command str_replace` and `docs comment replace` drop the line break that ends a file or heredoc, since their text replaces a run of text in place. `--json` returns business JSON.
+Pass a body directly with `--content`, or read UTF-8 with `--file <path>`; `--file -` reads stdin, such as a quoted heredoc (`<<'EOF'`), which keeps `$` and backticks as typed. A byte-order mark at the start of a file or stdin names the encoding rather than the text, so `--file` and `--file -` read it correctly, including JSON inputs. `docs update --command str_replace` and `docs comment replace` drop the line break that ends a file or heredoc, since their text replaces a run of text in place. `--json` returns business JSON.
 
 ```bash
 teamhub message read --json
