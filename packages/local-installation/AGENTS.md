@@ -21,7 +21,10 @@ a data drive with the stock root ACL therefore passes, and a folder nested in
 one that inherits Modify for Authenticated Users does not. The Daemon's
 `privatefs` treats the volume root the same way. A refusal leaves the
 installer as its code and reason (`windowsPrivateRefusal`), never as its
-words: in the `startFailure` line on stdout when the installer manager cannot
+words. A check that never ran — the program timed out, could not start, or a
+security product blocked it — is a refusal with reason `UNCHECKED` that still
+names the path, so the page can point at the folder instead of showing the
+transport's error as its words: in the `startFailure` line on stdout when the installer manager cannot
 start, and in the `--user-keys` outcome. The Desktop setup page branches on
 `UNSAFE_PARENT_ACCESS` to say where to install instead.
 
