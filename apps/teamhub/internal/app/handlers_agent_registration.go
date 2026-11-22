@@ -4,11 +4,13 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
 	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
+	"github.com/simplexai-labs/linger/apps/teamhub/internal/platform/agenttemplates"
 	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
 )
 
@@ -64,11 +66,37 @@ func (a *App) writeTenantAgentDirectoryError(c *gin.Context, err error) bool {
 	return a.notFoundOrError(c, "list Tenant Agents", err)
 }
 
+// maxAgentNameRunes is the contract's Agent name bound in characters, so a name
+// typed in any script gets the 120 the dialog allows.
+const maxAgentNameRunes = 120
+
+// validAgentRename reports whether a renamed Agent's name fits the same bound a
+// creation and a profile update use: characters, not UTF-8 bytes, so a name
+// typed in any script gets the 120 the dialog allows.
+func validAgentRename(name string) bool {
+	return strings.TrimSpace(name) != "" &&
+		utf8.ValidString(name) &&
+		utf8.RuneCountInString(strings.TrimSpace(name)) <= maxAgentNameRunes
+}
+
+// validAgentCreationText reports whether a new Agent's name and instructions
+// fit the bounds the profile update and the template publish paths use:
+// characters, not UTF-8 bytes.
+func validAgentCreationText(name, instructions string) bool {
+	name = strings.TrimSpace(name)
+	instructions = strings.TrimSpace(instructions)
+	return name != "" &&
+		utf8.ValidString(name) &&
+		utf8.RuneCountInString(name) <= maxAgentNameRunes &&
+		instructions != "" &&
+		utf8.ValidString(instructions) &&
+		utf8.RuneCountInString(instructions) <= agenttemplates.MaxInstructionsRunes
+}
+
 func (a *App) createTenantAgent(c *gin.Context) {
 	var request httpapi.TenantAgentCreateRequest
 	if err := decodeJSON(c, &request); err != nil ||
-		strings.TrimSpace(request.Name) == "" || len(request.Name) > 120 ||
-		strings.TrimSpace(request.Instructions) == "" || len(request.Instructions) > 50000 ||
+		!validAgentCreationText(request.Name, request.Instructions) ||
 		!agentregistry.ValidAgentRuntimeConfig(request.Runtime) {
 		a.writeError(c, http.StatusBadRequest, "INVALID_REQUEST", "Agent name, instructions, and runtime model are required")
 		return
@@ -164,7 +192,7 @@ func (a *App) updateTenantAgent(c *gin.Context) {
 	}
 	if request.Name != nil {
 		name := strings.TrimSpace(*request.Name)
-		if name == "" || len(name) > 120 {
+		if !validAgentRename(name) {
 			a.writeError(c, http.StatusBadRequest, "INVALID_REQUEST", "Agent name is invalid")
 			return
 		}
