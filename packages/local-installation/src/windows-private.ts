@@ -116,26 +116,44 @@ export async function windowsPrivatePath(
   repair = false,
   run: typeof runProcess = runProcess,
 ): Promise<void> {
-  const result = await run(
-    path.win32.join(
-      process.env.SystemRoot ?? "C:\\Windows",
-      "System32",
-      "WindowsPowerShell",
-      "v1.0",
-      "powershell.exe",
-    ),
-    [
-      "-NoLogo",
-      "-NoProfile",
-      "-NonInteractive",
-      "-EncodedCommand",
-      Buffer.from(WINDOWS_PRIVATE_SCRIPT, "utf16le").toString("base64"),
-    ],
-    {
-      input: JSON.stringify({ path: path.resolve(file), kind, repair }),
-      timeoutMs: 30000,
-    },
-  );
+  let result: Awaited<ReturnType<typeof runProcess>>;
+  try {
+    result = await run(
+      path.win32.join(
+        process.env.SystemRoot ?? "C:\\Windows",
+        "System32",
+        "WindowsPowerShell",
+        "v1.0",
+        "powershell.exe",
+      ),
+      [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-EncodedCommand",
+        Buffer.from(WINDOWS_PRIVATE_SCRIPT, "utf16le").toString("base64"),
+      ],
+      {
+        input: JSON.stringify({ path: path.resolve(file), kind, repair }),
+        timeoutMs: 30000,
+      },
+    );
+  } catch (failure) {
+    // The program never ran, so the check cannot say why: report the path and
+    // the reason it could not be checked instead of the transport's error.
+    const target = path.resolve(file);
+    throw Object.assign(
+      new Error(
+        `Windows private path validation failed: ${target} ${WINDOWS_PRIVATE_REASONS.UNCHECKED}. Use a current-user owned local directory without links or shared access.`,
+      ),
+      {
+        code: WINDOWS_PRIVATE_PATH_UNSAFE,
+        reason: "UNCHECKED",
+        path: target,
+        cause: failure,
+      },
+    );
+  }
   if (result.code !== 0) {
     const reason: WindowsPrivateReason = Object.hasOwn(
       WINDOWS_PRIVATE_REASONS,
