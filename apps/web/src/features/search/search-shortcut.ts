@@ -12,13 +12,15 @@ export function searchShortcutLabel() {
 
 /**
  * Cmd/Ctrl+K opens global search from anywhere, including the composer and
- * the Document editor. An IME composition in flight keeps the keystroke.
+ * the Document editor. An IME composition in flight keeps the keystroke:
+ * browsers report it either as `isComposing` or, before composition state is
+ * updated, as the 229 key code, and both mean the same thing here.
  */
 export function isGlobalSearchShortcut(event: KeyboardEvent) {
   if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) {
     return false;
   }
-  if (event.isComposing) return false;
+  if (event.isComposing || event.keyCode === 229) return false;
   return event.key.toLowerCase() === "k";
 }
 
