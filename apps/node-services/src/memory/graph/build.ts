@@ -6,6 +6,8 @@ import {
   type WikiGraph,
   type WikiNode,
 } from "openwiki/dist/visualize/graph.js";
+import { parse as parseYaml } from "yaml";
+import { isRecord } from "@linger/service-kit";
 import { mentionEdges, type InferredEdge } from "./inferred-edges.js";
 
 // Revision is publication metadata, not a second graph model. All nodes and
@@ -122,16 +124,18 @@ function frontmatterAliases(raw: string): string[] {
   const end = raw.indexOf("\n---", 3);
   if (end === -1) return [];
   const block = raw.slice(3, end).trim();
+  let meta: unknown;
   try {
-    const meta = JSON.parse(block) as { aliases?: unknown };
-    return Array.isArray(meta.aliases)
-      ? meta.aliases.filter(
-          (alias): alias is string => typeof alias === "string",
-        )
-      : [];
+    // A published page writes its frontmatter as YAML, which is a superset of
+    // JSON, so pages written either way are read here.
+    meta = parseYaml(block);
   } catch {
     return [];
   }
+  const aliases = isRecord(meta) ? meta.aliases : undefined;
+  return Array.isArray(aliases)
+    ? aliases.filter((alias): alias is string => typeof alias === "string")
+    : [];
 }
 
 function withoutPeriodReports(nodes: WikiNode[]): WikiNode[] {
