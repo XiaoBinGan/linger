@@ -169,10 +169,29 @@ export const writePersonalProfileSchema = {
     .describe("The current revision after the write."),
 };
 
+/** TeamHub bounds these fields in UTF-8 bytes, so a CJK name of 60 characters
+ * is 180 bytes and it refuses it: the schema has to measure the same way. */
+const withinBytes = (maximum: number) => (value: string) =>
+  Buffer.byteLength(value, "utf8") <= maximum;
+
 const accountFields = {
-  name: z.string().min(1).max(120).describe("Display name, up to 120 bytes."),
-  bio: z.string().max(2000).describe("Short bio, up to 2000 bytes."),
-  organization: z.string().max(200).describe("Organization, up to 200 bytes."),
+  name: z
+    .string()
+    .min(1)
+    .refine(withinBytes(120), "Use at most 120 bytes.")
+    // The published schema keeps the bound a refinement cannot express.
+    .meta({ maxLength: 120 })
+    .describe("Display name, up to 120 bytes."),
+  bio: z
+    .string()
+    .refine(withinBytes(2000), "Use at most 2000 bytes.")
+    .meta({ maxLength: 2000 })
+    .describe("Short bio, up to 2000 bytes."),
+  organization: z
+    .string()
+    .refine(withinBytes(200), "Use at most 200 bytes.")
+    .meta({ maxLength: 200 })
+    .describe("Organization, up to 200 bytes."),
 };
 
 export const getAccountProfileSchema = {
