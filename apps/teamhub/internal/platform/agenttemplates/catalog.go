@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
 
@@ -98,6 +99,11 @@ func loadFromFS(source fs.FS) ([]Template, error) {
 	return templates, nil
 }
 
+// MaxInstructionsRunes bounds an Agent template's instructions in characters,
+// the unit the contract states as maxLength: a CJK text of 50000 characters
+// is 150000 bytes and still fits.
+const MaxInstructionsRunes = 50000
+
 func validate(template *Template, file string) error {
 	fail := func(reason string) error {
 		return fmt.Errorf("built-in Agent template %s: %s", file, reason)
@@ -113,7 +119,7 @@ func validate(template *Template, file string) error {
 		return fail("name must be 1 to 120 characters")
 	case len([]rune(template.Description)) > 1000:
 		return fail("description exceeds 1000 characters")
-	case template.Instructions == "" || len(template.Instructions) > 50000:
+	case template.Instructions == "" || utf8.RuneCountInString(template.Instructions) > MaxInstructionsRunes:
 		return fail("instructions must be 1 to 50000 characters")
 	case template.AvatarKey != "" && !avatarKeyPattern.MatchString(template.AvatarKey):
 		return fail("avatar_key is not a valid avatar selection")
