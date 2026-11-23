@@ -38,12 +38,6 @@ Go service owning Human HTTP/SSE, Agent callbacks, and active product state.
 
 ## Important Conventions
 
-Text bounds on Agent and Document fields count Unicode characters, the unit the
-contract's `maxLength` states: `utf8.RuneCountInString` against the constants in
-`agentregistry` and `document`, and `document.ValidDocumentTitle` for a Document
-title at every entry point. A byte or UTF-16-unit count refuses text the contract
-allows, and a CJK or astral name reaches the bound far sooner.
-
 - The Human's default Another Me Agent is named `Linger`. Changing the Human's
   name updates the delegate description, never the Agent's display name.
   A forward migration renames generated names; custom Agent names stay.
@@ -280,8 +274,9 @@ allows, and a CJK or astral name reaches the bound far sooner.
   `LOCAL_MODEL_ACTION_UNCONFIRMED`: it may still act, and the snapshots show
   the outcome. The Computer's refusal codes map to `LocalModelsErrorCode` in
   `internal/app/handlers_local_models.go` (and `LOAD_NO_ROOM` / `MEMORY_INSUFFICIENT`
-  on model-source switches map to `LOCAL_MODEL_NO_ROOM` in
-  `internal/app/handlers_model_source.go`).
+  map to `LOCAL_MODEL_NO_ROOM` and `BYOK_GATEWAY_FAILED` maps to HTTP 502
+  `BYOK_GATEWAY_FAILED` with the Computer's diagnostic message and a `gateway`
+  detail entry in `internal/app/handlers_model_source.go`).
 - A Computer's model source lives on the Computer
   (`internal/app/handlers_model_source.go`); TeamHub never stores a BYOK key.
   A switch checks for running work, runs `apply` on the Computer, then moves
