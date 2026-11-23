@@ -3,6 +3,7 @@ package document
 import (
 	"context"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 
@@ -20,7 +21,8 @@ type UpdateMetadataResult struct {
 
 func (s *Service) UpdateMetadata(ctx context.Context, input UpdateMetadataInput) (UpdateMetadataResult, error) {
 	input.Title = strings.TrimSpace(input.Title)
-	if input.AccountID == "" || input.DocumentID == "" || input.Title == "" || len(input.Title) > 255 {
+	if input.AccountID == "" || input.DocumentID == "" ||
+		utf8.RuneCountInString(input.Title) < 1 || utf8.RuneCountInString(input.Title) > 255 {
 		return UpdateMetadataResult{}, ErrInvalidInput
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})

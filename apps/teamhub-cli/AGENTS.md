@@ -9,5 +9,6 @@
 - Never discover a fresh Task input version when finishing old output. Capture immutable business revisions before work.
 - Keep no local receipts, frozen input, send plans or locks. Every write carries one operation ID (`--operation-id` or a fresh one per invocation) and TeamHub deduplicates it; an unknown outcome prints the ID for a deliberate retry, and a connected-app write is never repeated by the CLI.
 - Working-copy records hold only the downloaded base of each path; TeamHub's CAS, not local state, protects concurrent work.
-- Exclude private configuration, credentials and repository metadata from publication, including nested trees and symlink aliases.
+- Exclude private configuration, credentials and repository metadata from publication, including nested trees, symlink aliases, and private folder names in any letter case.
 - Human documentation belongs in `README.md`; `--schema` is projected at runtime from `commandDefinitions` and the tool zod, so there is no generated catalog to update.
+- A tool schema's text bound counts Unicode characters, the unit the contract's `maxLength` states: `codePointString` publishes `maxLength` from the same number and repeats it as a refinement, because a refinement alone never reaches the schema.
