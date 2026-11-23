@@ -593,8 +593,8 @@ function isSemanticOperation(value: unknown): boolean {
         hasOnlyKeys(value, ["kind", "thread_id", "replacement"]) &&
         isID(value.thread_id) &&
         typeof value.replacement === "string" &&
-        value.replacement.length >= 1 &&
-        value.replacement.length <= 50_000
+        characterCount(value.replacement) >= 1 &&
+        characterCount(value.replacement) <= 50_000
       );
     default:
       return false;
@@ -684,12 +684,26 @@ function isIDArray(
   );
 }
 
+/** Counts Unicode characters, the unit the contract's maxLength states, so a
+ * replacement of 50 000 emoji fits and is not cut at 25 000 UTF-16 units. */
+function characterCount(value: string): number {
+  let count = 0;
+  for (const _ of value) count += 1;
+  return count;
+}
+
 function isID(value: unknown): value is string {
   return typeof value === "string" && internalIDPattern.test(value);
 }
 
 function isTitle(value: unknown): value is string {
-  return typeof value === "string" && value.length >= 1 && value.length <= 255;
+  // The contract's maxLength is in characters, so a title of 255 astral
+  // characters is 255, not the 510 UTF-16 units it occupies.
+  return (
+    typeof value === "string" &&
+    characterCount(value) >= 1 &&
+    characterCount(value) <= 255
+  );
 }
 
 function hasOnlyKeys(value: Record<string, unknown>, keys: string[]): boolean {

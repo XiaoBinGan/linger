@@ -103,7 +103,7 @@ func (s *Service) ApplySemanticMutation(
 			ConflictReason: applied.ConflictReason,
 		}, nil
 	}
-	if applied.Title == "" || len(applied.Title) > 255 {
+	if !validDocumentTitle(applied.Title) {
 		return SemanticMutationResult{}, ErrRuntimeResultInvalid
 	}
 	if applied.Title != admission.CurrentTitle {
@@ -243,7 +243,7 @@ func validateSemanticOperation(value json.RawMessage) error {
 			Title string `json:"title"`
 		}
 		if err := decodeStrictSemanticOperation(value, &operation); err != nil ||
-			operation.Kind != "set_title" || len(operation.Title) < 1 || len(operation.Title) > 255 {
+			operation.Kind != "set_title" || !validDocumentTitle(operation.Title) {
 			return ErrInvalidInput
 		}
 	case "append_blocks":
