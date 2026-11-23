@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/simplexai-labs/linger/apps/teamhub/internal/document"
 )
 
 // Document tools: the live voice creates, renames and edits the Documents
@@ -224,7 +226,7 @@ func DocumentEdit(args DocumentArguments) (edit map[string]string, problem strin
 // DocumentTitle is the title a rename sets; false when it is not one line.
 func DocumentTitle(raw string) (string, bool) {
 	title := strings.Join(strings.Fields(raw), " ")
-	return title, title != "" && utf8.RuneCountInString(title) <= 255
+	return title, document.ValidDocumentTitle(title)
 }
 
 // DocumentBlock is one block of a blocks export with its own text.
