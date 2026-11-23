@@ -459,7 +459,10 @@ func (s *Service) createVoiceLiveRoom(ctx context.Context, session voicelive.Ses
 	}
 	name := strings.Join(strings.Fields(args.Name), " ")
 	description := strings.TrimSpace(args.Description)
-	if name == "" || len(name) > 120 || len(description) > 2000 || len(args.Members) > voicelive.MaxRoomMembers {
+	if name == "" ||
+		utf8.RuneCountInString(name) > roomcreation.MaxNameRunes ||
+		utf8.RuneCountInString(description) > roomcreation.MaxDescriptionRunes ||
+		len(args.Members) > voicelive.MaxRoomMembers {
 		return "", voicelive.ErrInvalid
 	}
 	var members voicelive.MemberMatch
