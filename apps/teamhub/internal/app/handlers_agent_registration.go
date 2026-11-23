@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
 	"github.com/simplexai-labs/linger/apps/teamhub/internal/collaboration"
-	"github.com/simplexai-labs/linger/apps/teamhub/internal/platform/agenttemplates"
 	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
 )
 
@@ -66,37 +65,29 @@ func (a *App) writeTenantAgentDirectoryError(c *gin.Context, err error) bool {
 	return a.notFoundOrError(c, "list Tenant Agents", err)
 }
 
-// maxAgentNameRunes is the contract's Agent name bound in characters, so a name
-// typed in any script gets the 120 the dialog allows.
-const maxAgentNameRunes = 120
-
-// validAgentRename reports whether a renamed Agent's name fits the same bound a
-// creation and a profile update use: characters, not UTF-8 bytes, so a name
-// typed in any script gets the 120 the dialog allows.
-func validAgentRename(name string) bool {
-	return strings.TrimSpace(name) != "" &&
-		utf8.ValidString(name) &&
-		utf8.RuneCountInString(strings.TrimSpace(name)) <= maxAgentNameRunes
-}
-
-// validAgentCreationText reports whether a new Agent's name and instructions
-// fit the bounds the profile update and the template publish paths use:
-// characters, not UTF-8 bytes.
-func validAgentCreationText(name, instructions string) bool {
+// validAgentName reports whether an Agent or template name fits the contract
+// character bound.
+func validAgentName(name string) bool {
 	name = strings.TrimSpace(name)
-	instructions = strings.TrimSpace(instructions)
 	return name != "" &&
 		utf8.ValidString(name) &&
-		utf8.RuneCountInString(name) <= maxAgentNameRunes &&
+		utf8.RuneCountInString(name) <= agentregistry.MaxNameRunes
+}
+
+// validAgentText reports whether an Agent or template name and instructions fit
+// the contract character bounds.
+func validAgentText(name, instructions string) bool {
+	instructions = strings.TrimSpace(instructions)
+	return validAgentName(name) &&
 		instructions != "" &&
 		utf8.ValidString(instructions) &&
-		utf8.RuneCountInString(instructions) <= agenttemplates.MaxInstructionsRunes
+		utf8.RuneCountInString(instructions) <= agentregistry.MaxInstructionsRunes
 }
 
 func (a *App) createTenantAgent(c *gin.Context) {
 	var request httpapi.TenantAgentCreateRequest
 	if err := decodeJSON(c, &request); err != nil ||
-		!validAgentCreationText(request.Name, request.Instructions) ||
+		!validAgentText(request.Name, request.Instructions) ||
 		!agentregistry.ValidAgentRuntimeConfig(request.Runtime) {
 		a.writeError(c, http.StatusBadRequest, "INVALID_REQUEST", "Agent name, instructions, and runtime model are required")
 		return
@@ -192,7 +183,7 @@ func (a *App) updateTenantAgent(c *gin.Context) {
 	}
 	if request.Name != nil {
 		name := strings.TrimSpace(*request.Name)
-		if !validAgentRename(name) {
+		if !validAgentName(name) {
 			a.writeError(c, http.StatusBadRequest, "INVALID_REQUEST", "Agent name is invalid")
 			return
 		}
@@ -206,7 +197,9 @@ func (a *App) updateTenantAgent(c *gin.Context) {
 		}
 		request.Description = &description
 	}
-	if request.Instructions != nil && (strings.TrimSpace(*request.Instructions) == "" || len([]rune(*request.Instructions)) > 50000) {
+	if request.Instructions != nil && (strings.TrimSpace(*request.Instructions) == "" ||
+		!utf8.ValidString(*request.Instructions) ||
+		utf8.RuneCountInString(*request.Instructions) > agentregistry.MaxInstructionsRunes) {
 		a.writeError(c, http.StatusBadRequest, "INVALID_REQUEST", "Agent instructions must contain between 1 and 50000 characters")
 		return
 	}

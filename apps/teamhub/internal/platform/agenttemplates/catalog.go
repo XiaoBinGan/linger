@@ -15,6 +15,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/simplexai-labs/linger/apps/teamhub/internal/agentregistry"
 	"github.com/simplexai-labs/linger/apps/teamhub/internal/reminder"
 
 	httpapi "github.com/simplexai-labs/linger/contracts-go/teamhubpublic"
@@ -99,11 +100,6 @@ func loadFromFS(source fs.FS) ([]Template, error) {
 	return templates, nil
 }
 
-// MaxInstructionsRunes bounds an Agent template's instructions in characters,
-// the unit the contract states as maxLength: a CJK text of 50000 characters
-// is 150000 bytes and still fits.
-const MaxInstructionsRunes = 50000
-
 func validate(template *Template, file string) error {
 	fail := func(reason string) error {
 		return fmt.Errorf("built-in Agent template %s: %s", file, reason)
@@ -115,11 +111,11 @@ func validate(template *Template, file string) error {
 		return fail("template_id is not a valid identifier")
 	case strings.TrimSuffix(file, ".json") != template.TemplateID:
 		return fail("template_id must equal the file name")
-	case template.Name == "" || len([]rune(template.Name)) > 120:
+	case template.Name == "" || !utf8.ValidString(template.Name) || utf8.RuneCountInString(template.Name) > agentregistry.MaxNameRunes:
 		return fail("name must be 1 to 120 characters")
-	case len([]rune(template.Description)) > 1000:
+	case !utf8.ValidString(template.Description) || utf8.RuneCountInString(template.Description) > agentregistry.MaxDescriptionRunes:
 		return fail("description exceeds 1000 characters")
-	case template.Instructions == "" || utf8.RuneCountInString(template.Instructions) > MaxInstructionsRunes:
+	case template.Instructions == "" || !utf8.ValidString(template.Instructions) || utf8.RuneCountInString(template.Instructions) > agentregistry.MaxInstructionsRunes:
 		return fail("instructions must be 1 to 50000 characters")
 	case template.AvatarKey != "" && !avatarKeyPattern.MatchString(template.AvatarKey):
 		return fail("avatar_key is not a valid avatar selection")
