@@ -75,7 +75,7 @@ import {
 import { prepareSourceComputer } from "./source-computer.js";
 import { connectComputer, stopComputer } from "./computer.js";
 import { prepareLocalEnrollment } from "./local-enrollment.js";
-import { lineRedactor, redact } from "./redaction.js";
+import { excerptLine, lineRedactor, redact } from "./redaction.js";
 import { runProcess } from "./process.js";
 import { systemProxyEnvironment } from "./service-proxy.js";
 import {
@@ -275,7 +275,7 @@ export function compileFailureExcerpt(text: string, limit = 12) {
     .map((line) => line.trim())
     .filter((line) => line && !/^(?:\S+\s+)?(?:watching|!exclude)\b/.test(line))
     .slice(-limit)
-    .map((line) => (line.length > 240 ? `${line.slice(0, 239)}…` : line))
+    .map((line) => excerptLine(line))
     .join("\n");
 }
 // A compile that fails stops TeamHub or leaves the dev server waiting for an
