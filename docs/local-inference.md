@@ -6,11 +6,15 @@
 
 Claude Code, Codex and Pi run as they always do, while a local gateway points
 them at models on your own machine, with Gemini CLI, OpenCode and Hermes coming
-next. Your wiki, memory, sessions and files stay on your disk, and a remote
-model or the subscription you already pay for joins only when you ask. One
-install sets up a language model, and it stays quick even on a fanless laptop.
+next. Antigravity runs beside them and signs in to its own account over ACP
+instead of using this gateway. Your wiki, memory, sessions and files stay on
+your disk, and a remote model or the subscription you already pay for joins only
+when you ask. One install sets up a language model, and it stays quick even on a
+fanless laptop.
 
-How agents, approvals and background work share a model is in
+Antigravity's install and sign-in live in
+[the Computer README](../apps/computer/README.md#antigravity). How agents,
+approvals and background work share a model is in
 [Model scheduling](model-scheduling.md).
 
 ## Model source
