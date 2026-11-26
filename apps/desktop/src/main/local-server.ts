@@ -858,7 +858,13 @@ export class LocalServerModule implements Module {
       this.#locationError = undefined;
     } else {
       const home = await installLocation(picked);
-      this.#locationError = await checkLocation(home, this.#freeBytes());
+      // The check runs before the page has a plan, so the model it recommends
+      // is the one this folder will hold; counting only the base would accept
+      // a folder the install then refuses.
+      this.#locationError = await checkLocation(
+        home,
+        this.#locationBytes(this.#plannedModel("recommended")),
+      );
       if (
         !this.#locationError &&
         (this.#options.platform ?? process.platform) === "win32"
@@ -1345,16 +1351,9 @@ export class LocalServerModule implements Module {
       // On Windows the default data location also needs a space check. A
       // custom folder may have filled up or gone since it was picked.
       if (platform === "win32" || this.#location) {
-        const model =
-          this.#check.state === "checked" &&
-          (plan.runtime === "local" ||
-            (plan.runtime === "recommended" &&
-              this.#check.recommendation === "local-models"))
-            ? this.#check.model
-            : undefined;
         const error = await checkLocation(
           home,
-          this.#freeBytes() + (model?.diskBytes ?? 0),
+          this.#locationBytes(this.#plannedModel(plan.runtime)),
         );
         if (error) throw new Error(`${home}: ${error}`);
       }
@@ -1965,6 +1964,21 @@ export class LocalServerModule implements Module {
 
   #freeBytes(): number {
     return this.#options.freeBytes ?? LOCATION_FREE_BYTES;
+  }
+
+  /** The space a location must have free: the base plus the model it installs. */
+  #locationBytes(model?: LocalModel): number {
+    return locationBytesWithModel(this.#freeBytes(), model);
+  }
+
+  /** The model a plan installs here, when the check already picked one. */
+  #plannedModel(runtime: LocalServerPlan["runtime"]): LocalModel | undefined {
+    return this.#check.state === "checked" &&
+      (runtime === "local" ||
+        (runtime === "recommended" &&
+          this.#check.recommendation === "local-models"))
+      ? this.#check.model
+      : undefined;
   }
 
   #macos(): string | undefined {
@@ -4810,6 +4824,14 @@ export const installLocation = async (picked: string): Promise<string> => {
 // Why Linger cannot install into `directory`, or undefined when it can: the
 // folder (or the one it will be made in) must take files and its disk must
 // have `neededBytes` free.
+/** The free space a location must have: the base plus the model it installs. */
+export function locationBytesWithModel(
+  freeBytes: number,
+  model?: LocalModel,
+): number {
+  return freeBytes + (model?.diskBytes ?? 0);
+}
+
 export const checkLocation = async (
   directory: string,
   neededBytes: number,

@@ -44,6 +44,7 @@ import {
   MIN_MACOS,
   anotherMeMissing,
   checkLocation,
+  locationBytesWithModel,
   computerNotOnline,
   followHttps,
   formatInstallJobFailure,
@@ -4084,6 +4085,17 @@ describe("LocalServerModule install location", () => {
     const other = tempDirectory();
     writeFileSync(path.join(other, "notes.txt"), "");
     expect(await installLocation(other)).toBe(path.join(other, "Linger"));
+  });
+
+  it("counts a model's bytes on top of the base the folder needs", () => {
+    // The folder picker used to check only the base footprint, so it accepted a
+    // folder that the install then refused once the model's bytes were added.
+    expect(locationBytesWithModel(20 * 1024 ** 3)).toBe(20 * 1024 ** 3);
+    expect(
+      locationBytesWithModel(20 * 1024 ** 3, {
+        diskBytes: 5 * 1024 ** 3,
+      } as never),
+    ).toBe(25 * 1024 ** 3);
   });
 
   it("asks for free space on the folder's disk", async () => {
