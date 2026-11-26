@@ -1,3 +1,4 @@
+import { suppressFollowUpClick } from "@/components/ui/suppress-follow-up-click";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import {
   type CSSProperties,
@@ -88,7 +89,10 @@ export function ByokCombobox({
       )?.focus();
     }
     const closeOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) close();
+      if (rootRef.current?.contains(event.target as Node)) return;
+      // The paired click would otherwise activate the control under the list.
+      if ((event.button ?? 0) === 0) suppressFollowUpClick(event);
+      close();
     };
     document.addEventListener("pointerdown", closeOutside);
     return () => document.removeEventListener("pointerdown", closeOutside);
